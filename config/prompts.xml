@@ -3,18 +3,21 @@
       xmlns:so="http://www.schema.org/"
       xmlns:rdfs="http://www.w3.org/rdfs">
 
-<!-- This file has all the prompts that are used in the process of running a query. -->
-
-  <Item>
+<Item>
 
     <Prompt ref="DetectIrrelevantQueryPrompt">
       <promptString>
         The user is querying the site {request.site} which has information about {site.itemType}s.
-        Is the site utterly completely irrelevant to the user's query? 
-        The question is not whether this is the best site for answering the query, 
-        but if there is nothing on the site that is likely to be relevant for the query. 
-        If the site is irrelevant, add an explanation for why it is irrelevant. Otherwise, leave that field blank.
+        Is the site utterly completely irrelevant to the user's query? The question is not whether this is the best site for answering the query, but if there is nothing on the site that is likely to be relevant for the query. If the site is irrelevant, add an explanation. Otherwise, leave the explanation blank.
         The user query is: '{request.query}'
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "site_is_irrelevant_to_query": "boolean",
+          "explanation_for_irrelevance": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -27,18 +30,17 @@
     <Prompt ref="PrevQueryDecontextualizer">
       <promptString>
         The user is querying the site {request.site} which has {site.itemType}s.
-        Rewrite the query, incorporating the context of the previous queries and answers.
-        Keep the decontextualized query short and do not reference the site. 
-
-        If the query very clearly does not reference earlier queries, 
-        don't change the query. Err on the side of incorporating the context of the 
-        previous queries. If you are not sure whether this is a brand new query, 
-        or follow up, it is likely a follow up. Try your best to incorporate the 
-        context from the previous queries.
-
-        The user's query is: {request.rawQuery}. 
+        Rewrite the query, incorporating the context of the previous queries and answers. Keep the decontextualized query short and do not reference the site. If the query very clearly does not reference earlier queries, don't change it. Err on the side of incorporating context. If unsure, assume it's a follow-up.
+        The user's query is: {request.rawQuery}.
         Previous queries were: {request.previousQueries}.
-       <!-- Previous answers (title + url)provided were: {request.prevAnswers}. -->
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "requires_decontextualization": "boolean",
+          "decontextualized_query": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -50,11 +52,15 @@
 
     <Prompt ref="DecontextualizeContextPrompt">
       <promptString>
-        The user is asking the following question: '{request.rawQuery}' in the context of 
-        the an item with the following description: {request.contextDescription}. 
-        Previous answers provided were: {request.prevAnswers}.
-        Rewrite the query to decontextualize it so that it can be answered 
-        without reference to earlier queries, previous answers, or to the item description.
+        The user is asking the following question: '{request.rawQuery}' in the context of an item with the description: {request.contextDescription}. Previous answers provided were: {request.prevAnswers}.
+        Rewrite the query to decontextualize it so that it can be answered without reference to earlier queries, previous answers, or the item description.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "decontextualized_query": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -65,12 +71,15 @@
 
     <Prompt ref="FullDecontextualizePrompt">
       <promptString>
-        The user is asking the following question: '{request.rawQuery}' in the context of 
-        the an item with the following description: {request.contextDescription}. 
-        Previous queries from the user were: {request.previousQueries}.
-        Previous answers provided were: {request.prevAnswers}.
-        Rewrite the query to decontextualize it so that it can be answered 
-        without reference to earlier queries, previous answers, or to the item description.
+        The user is asking the following question: '{request.rawQuery}' in the context of an item with the description: {request.contextDescription}. Previous queries from the user were: {request.previousQueries}. Previous answers provided were: {request.prevAnswers}.
+        Rewrite the query to decontextualize it so that it can be answered without reference to earlier queries, previous answers, or the item description.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "decontextualized_query": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -81,13 +90,16 @@
 
     <Prompt ref="DetectMemoryRequestPrompt">
       <promptString>
-        Analyze the following statement from the user. 
-        Is the user asking you to remember, that may be relevant to not just this query, but also future queries? 
-        If so, what is the user asking us to remember?
-        The user should be explicitly asking you to remember something for future queries, 
-        not just expressing a requirement for the current query.
-        Keep the memory_request field short and do not reference the user or site.
+        Analyze the user's statement. Is the user asking you to remember something relevant for future queries, not just the current one? If so, what is it? The user must explicitly ask to remember. Keep the memory_request short.
         The user's query is: {request.rawQuery}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "is_memory_request": "boolean",
+          "memory_request": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -99,10 +111,16 @@
 
     <Prompt ref="DetectMultiItemTypeQueryPrompt">
       <promptString>
-        Analyze the following query from the user.
-        Is the user asking for only one kind of item or are they asking for multiple kinds of items.
-        If they are asking for multiple kinds of items, construct indepenent queries for each of the 
-        kinds of items, separated by semicolons. The user's query is: {request.query}.
+        Analyze the query. Is the user asking for only one kind of item or multiple? If multiple, construct independent queries for each kind, separated by semicolons.
+        The user's query is: {request.query}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "single_item_type_query": "boolean",
+          "item_queries": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -114,17 +132,16 @@
 
     <Prompt ref="DetectItemTypePrompt">
       <promptString>
-        What is the kind of item the query is likely seeking with this query: {request.query}
-        
-        Common item types include:
-        - Recipe (for cooking, food preparation)
-        - Movie (for films, cinema)
-        - Product (for items to purchase)
-        - Restaurant (for dining establishments)
-        - Statistics (for demographic data, population statistics, economic indicators about places like counties, cities, states)
-        - Item (for general items that don't fit other categories)
-        
-        If the query is asking about statistical data like population, median income, demographics, or economic indicators for geographic locations, return "Statistics".
+        What is the kind of item the query is likely seeking: {request.query}
+        Common item types: Recipe, Movie, Product, Restaurant, Statistics, Item.
+        If asking about statistical data (population, income, demographics, economic indicators for geographic locations), return "Statistics".
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "item_type": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -135,11 +152,17 @@
 
     <Prompt ref="DetectQueryTypePrompt">
       <promptString>
-        Analyze the following query from the user. 
-        Is the user asking for a list of {site.itemType} that match a certain description or are they asking for the
-        details of a particular {site.itemType}?
-        If the user for the details of a particular {site.itemType}, what is the name of the {site.itemType} and what
-        details are they asking for? The user's query is: {request.query}.
+        Analyze the query. Is the user asking for a list of {site.itemType} that match a description, or details of a particular {site.itemType}? If details of a particular item, what is its name and what details are requested?
+        The user's query is: {request.query}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "item_details_query": "boolean",
+          "item_title": "string",
+          "details_being_asked": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -152,12 +175,17 @@
 
     <Prompt ref="RankingPromptWithExplanation">
       <promptString>
-        Assign a score between 0 and 100 to the following {site.itemType}
-        based on how relevant it is to the user's question. Use your knowledge from other sources, about the item, to make a judgement.
-        Provide a short description of the item that is relevant to the user's question, without mentioning the user's question.
-        Provide an explanation of the relevance of the item to the user's question, without mentioning the user's question or the score or explicitly mentioning the term relevance.
-        If the score is below 75, in the description, include the reason why it is still relevant.
+        Assign a score (0-100) to the {site.itemType} for relevance to the user's question. Provide a short description relevant to the user's question. Explain the item's relevance without mentioning the user's question, score, or "relevance". If score &lt; 75, include why it's still relevant in the description.
         The user's question is: {request.query}. The item's description is {item.description}
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "score": "integer",
+          "description": "string",
+          "explanation": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -170,12 +198,16 @@
 
     <Prompt ref="RankingPrompt">
       <promptString>
-        Assign a score between 0 and 100 to the following item
-        based on how relevant it is to the user's question. Use your knowledge from other sources, about the item, to make a judgement. 
-        If the score is above 50, provide a short description of the item highlighting the relevance to the user's question, without mentioning the user's question.
-        Provide an explanation of the relevance of the item to the user's question, without mentioning the user's question or the score or explicitly mentioning the term relevance.
-        If the score is below 75, in the description, include the reason why it is still relevant.
-        The user's question is: \"{request.query}\". The item's description in schema.org format is \"{item.description}\".
+        Assign a score (0-100) to the item for relevance to the user's question. If score &gt; 50, provide a short description highlighting relevance without mentioning the user's question. Explain the item's relevance without mentioning the user's question, score, or "relevance". If score &lt; 75, include why it's still relevant in the description.
+        The user's question is: "{request.query}". The item's description in schema.org format is "{item.description}".
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "score": "integer",
+          "description": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -187,11 +219,17 @@
 
     <Prompt ref="RankingPromptForGenerate">
       <promptString>
-        Assign a score between 0 and 100 to the following item
-        based on useful it might be to answering the user's question. 
-        The user's question is: \"{request.query}\".
-        The item in schema.org format is: \"{item.description}\". Include a 
-        short description of the item in the description field.
+        Assign a score (0-100) to the item based on its usefulness for answering the user's question. Include a short description of the item.
+        The user's question is: "{request.query}".
+        The item in schema.org format is: "{item.description}".
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "score" : "integer",
+          "description" : "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -200,17 +238,20 @@
         }
       </returnStruc>
     </Prompt>
-     
-    
+
     <Prompt ref="SynthesizePromptForGenerate">
       <promptString>
-        Given the following items, synthesize an answer to the user's question. 
-        You do not need to include all the items, but you should include the most relevant ones.
-        For each of the items included in the answer, provide the URL of the item in 
-        the 'urls' field of the structured output. Make sure to include 
-        the URL for every one of the items. Do not include the URL in the answer field.
+        Given the following items, synthesize an answer to the user's question. Include the most relevant items. For each included item, provide its URL in the 'urls' field. Do not include URLs in the 'answer' field.
         The user's question is: {request.query}.
         The items are: {request.answers}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "answer" : "string",
+          "urls" : "array of strings"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -220,11 +261,18 @@
       </returnStruc>
     </Prompt>
 
-     <Prompt ref="SummarizeResultsPrompt">
+    <Prompt ref="SummarizeResultsPrompt">
       <promptString>
-        Given the following items, summarize the results as an answer to the user's question. `
-        The user's question is: {request.query}. 
+        Given the following items, summarize the results as an answer to the user's question.
+        The user's question is: {request.query}.
         The items are: {request.answers}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "summary" : "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -235,12 +283,17 @@
 
     <Prompt ref="DescriptionPromptForGenerate">
       <promptString>
-        The item with the following description is used to answer the user's question. 
-        Please provide a description of the item, in the context of the user's question
-        and the overall answer.
+        The item with the following description is used to answer the user's question. Provide a description of the item, in the context of the user's question and the overall answer.
         The user's question is: {request.query}.
         The overall answer is: {request.answer}.
         The item is: {item.description}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "description" : "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -251,18 +304,17 @@
 
     <Prompt ref="ItemMatchingPrompt">
       <promptString>
-        The user is looking for some details about: {request.item_name}
-        
-        Assign a score between 0 and 100 for whether the following item description
-        matches what the user is looking for. A score of 100 means this is exactly
-        the item they want, 0 means it's completely unrelated.
-
-        If the score is above 75, also extract the details that the user is looking for.
-        Include only the details that the user is explicitly asking for.
-
-        The details requested are: {request.details_requested}. 
-        
+        The user is looking for some details about: {request.item_name}. Assign a score (0-100) for how well the item description matches what the user seeks. If score &gt; 75, extract ONLY the explicitly requested details.
+        The details requested are: {request.details_requested}.
         Item description: {item.description}
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "score": "integer",
+          "item_details": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -274,22 +326,21 @@
 
     <Prompt ref="ExtractItemDetailsPrompt">
       <promptString>
-        The user is requesting specific details about an item they previously saw.
-        
-        The user's query: {request.query}
-        The details requested: {request.details_requested}
-        
-        From the following item description, extract ONLY the specific details the user is asking for.
-        Be comprehensive but focused - include all relevant information for what they asked, but don't include unrelated details.
-        
-        For example:
-        - If they ask for "ingredients", include the full ingredients list
-        - If they ask for "price", include price and any pricing variations
-        - If they ask for "nutrition", include all nutritional information
-        - If they ask for "description", provide a clear summary of the item
-        - If they ask for "instructions" or "how to make", include step-by-step instructions
-        
+        Extract ONLY the specific details the user is asking for from the item description. Be comprehensive but focused.
+        User's query: {request.query}
+        Details requested: {request.details_requested}
         Item description: {item.description}
+
+        For example: If asking for "ingredients", include the full ingredients list. If asking for "price", include price and variations. If asking for "nutrition", include all nutritional info. If asking for "description", provide a clear summary. If asking for "instructions", include step-by-step.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "item_name": "string",
+          "requested_details": "string",
+          "additional_context": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -300,14 +351,18 @@
       </returnStruc>
     </Prompt>
 
-
-    <Prompt ref="FindItemPrompt"> 
+    <Prompt ref="FindItemPrompt">
       <promptString>
-        The user is looking for for an item named / described as: {item.name}
-        Assign a score between 0 and 100 for whether the following item description
-        matches the items the user is looking for. A score of 100 means this is exactly
-        the item they want, 0 means it's completely unrelated.
+        The user is looking for an item named/described as: {item.name}.
+        Assign a score (0-100) for how well the item description matches what the user seeks.
         Item description: {item.description}
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "score": "integer"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -316,17 +371,18 @@
       </returnStruc>
     </Prompt>
 
-    
-    
     <Prompt ref="CompareItemsPrompt">
       <promptString>
-      The user is looking for a comparison between two items with the following descriptions:
-      Item 1: {request.item1_description} 
-      vs
-      Item 2: {request.item2_description} 
-      The user is asking for the following details: {request.details_requested}
-      Provide a comparison of the two items, highlighting the differences and similarities.
-      The user's query is: {request.query}.
+        The user wants a comparison between two items with descriptions: Item 1: {request.item1_description} vs Item 2: {request.item2_description}. The user is asking for details: {request.details_requested}.
+        Provide a comparison, highlighting differences and similarities.
+        The user's query is: {request.query}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "comparison": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -337,13 +393,16 @@
 
     <Prompt ref="CompareItemDetailsPrompt">
       <promptString>
-      The user is looking for a comparison between two items with the following descriptions:
-      Item 1: {request.item1_description} 
-      and
-      Item 2: {request.item2_description} 
-      The user is asking for the following details: {request.details_requested}
-      Provide a comparison of the two items, highlighting the differences and similarities.
-      The user's query is: {request.query}.
+        The user wants a comparison between two items with descriptions: Item 1: {request.item1_description} and Item 2: {request.item2_description}. The user is asking for details: {request.details_requested}.
+        Provide a comparison, highlighting differences and similarities.
+        The user's query is: {request.query}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "comparison": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -357,16 +416,16 @@
   <Recipe>
     <Prompt ref="DetectMemoryRequestPrompt">
       <promptString>
-        Analyze the following statement from the user. 
-        Is the user asking you to remember a dietary constraint, that may be relevant
-        to not just this query, but also future queries? For example, the user may say
-        that they are vegetarian or observe kosher or halal or specify an allergy such
-        as gluten or lactose intolerance.
-        If so, what is the user asking us to remember?
-        The user should be explicitly asking you to remember something for future queries, 
-        not just expressing a requirement for the current query.
-         Keep the memory_request field short and do not reference the user or site.
+        Analyze the user's statement. Is the user asking you to remember a dietary constraint (e.g., vegetarian, kosher, gluten/lactose intolerance) for future queries? If so, what is it? The user must explicitly ask to remember. Keep the memory_request short.
         The user's query is: {request.rawQuery}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "is_memory_request": "boolean",
+          "memory_request": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -376,23 +435,20 @@
       </returnStruc>
     </Prompt>
 
- <Prompt ref="ItemMatchingPrompt">
+    <Prompt ref="ItemMatchingPrompt">
       <promptString>
-        The user is looking for some details about: {request.item_name} and the users query is: {request.query}.
-        Assign a score between 0 and 100 for whether the following item description
-        matches what the user is looking for. A score of 100 means this is exactly
-        the item they want, 0 means it's completely unrelated.
-
-        If the score is above 75, also extract the details that the user is looking for.
-        Include only the details that the user is explicitly asking for.
-        If they asked for ingredients, provide only the ingredients list.
-        If they asked for instructions, provide only the cooking steps.
-        If they asked for nutrition info, provide only nutritional details.
-        
-        Be direct and specific - extract exactly what they asked for from the data.
-        The details requested are: {request.details_requested}. 
-        
+        The user is looking for some details about: {request.item_name} and their query is: {request.query}.
+        Assign a score (0-100) for how well the item description matches. If score &gt; 75, extract ONLY the explicitly requested details. Be direct and specific.
+        Details requested: {request.details_requested}.
         Item description: {item.description}
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "score": "integer",
+          "item_details": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -401,17 +457,21 @@
         }
       </returnStruc>
     </Prompt>
-
-
   </Recipe>
 
   <RealEstate>
     <Prompt ref="RequiredInfoPrompt">
       <promptString>
-        Answering the user's query requires the location and price range.
-        Do you have this information from this
-        query or the previous queries or the context or memory about the user? 
-        The user's query is: {request.query}. The previous queries are: {request.previousQueries}.
+        Answering the user's query requires location and price range. Is this information available from the current query, previous queries, context, or memory?
+        The user's query is: {request.query}. Previous queries are: {request.previousQueries}.
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "required_info_found": "boolean",
+          "user_question": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -426,13 +486,26 @@
     <Prompt ref="EnsembleBasePrompt">
       <promptString>
         Based on the user's request: "{request.query}"
+        Searched for: {ensemble.queries}
+        Search results: {ensemble.results}
 
-        I searched for: {ensemble.queries}
-
-        Here are the search results:
-        {ensemble.results}
-
-        Please create a cohesive recommendation that addresses the user's request.
+        Create a cohesive recommendation.
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "theme": "string",
+          "items": [
+            {
+              "category": "string",
+              "name": "string",
+              "description": "string",
+              "why_recommended": "string",
+              "details": {}
+            }
+          ],
+          "overall_tips": ["string"]
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -440,7 +513,7 @@
           "items": [
             {
               "category": "Category name (e.g., Appetizer, Museum, Footwear)",
-              "name": "Specific item name", 
+              "name": "Specific item name",
               "description": "Detailed description",
               "why_recommended": "Why this item fits the request",
               "details": {}
@@ -454,27 +527,31 @@
     <Prompt ref="EnsembleMealPlanningPrompt">
       <promptString>
         Based on the user's request: "{request.query}"
+        Searched for: {ensemble.queries}
+        Search results: {ensemble.results}
 
-        I searched for: {ensemble.queries}
-
-        Here are the search results:
-        {ensemble.results}
-
-        Create a complete meal recommendation with:
-        1. Appetizer/Starter
-        2. Main Course
-        3. Dessert
-
-        For each course, provide:
-        - Name of the dish
-        - Brief description
-        - Why it complements the other courses
-        - Any relevant details (prep time, difficulty, dietary info)
-        - URL of the item
-
-        Include the URL of the item in the 'url' field of the structured output.
-
-        Ensure the courses work well together in terms of flavors, textures, and overall dining experience.
+        Create a complete meal recommendation (Appetizer, Main, Dessert). For each course, provide name, description, why it complements others, relevant details, and URL. Ensure courses work well together.
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "theme": "string",
+          "items": [
+            {
+              "category": "string",
+              "name": "string",
+              "description": "string",
+              "why_recommended": "string",
+              "url": "string",
+              "details": {
+                "prep_time": "string",
+                "difficulty": "string",
+                "dietary_info": "string"
+              }
+            }
+          ],
+          "overall_tips": ["string"]
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -501,26 +578,33 @@
     <Prompt ref="EnsembleTravelItineraryPrompt">
       <promptString>
         Based on the user's request: "{request.query}"
+        Searched for: {ensemble.queries}
+        Search results: {ensemble.results}
 
-        I searched for: {ensemble.queries}
-
-        Here are the search results:
-        {ensemble.results}
-
-        Create a travel itinerary recommendation with:
-        1. Attractions/Museums to visit
-        2. Nearby restaurants for meals
-        3. Suggested order/timing
-
-        For each recommendation, provide:
-        - Name and location
-        - Why it's worth visiting
-        - Time needed
-        - How it connects to other recommendations
-        - Any practical tips (hours, tickets, reservations)
-        - URL of the item
-
-        Include the URL of the item in the 'url' field of the structured output.
+        Create a travel itinerary (Attractions/Museums, Restaurants, suggested order). For each recommendation, provide name, location, why it's worth visiting, time needed, connection to others, practical tips, and URL.
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "theme": "string",
+          "items": [
+            {
+              "category": "string",
+              "name": "string",
+              "description": "string",
+              "why_recommended": "string",
+              "url": "string",
+              "details": {
+                "location": "string",
+                "time_needed": "string",
+                "best_time": "string",
+                "tickets": "string",
+                "reservations": "string"
+              }
+            }
+          ],
+          "overall_tips": ["string"]
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -549,27 +633,32 @@
     <Prompt ref="EnsembleOutfitPrompt">
       <promptString>
         Based on the user's request: "{request.query}"
+        Searched for: {ensemble.queries}
+        Search results: {ensemble.results}
 
-        I searched for: {ensemble.queries}
-
-        Here are the search results, each with a URL:
-        {ensemble.results}
-
-        Create a complete outfit recommendation with:
-        1. Essential items (footwear, jacket, base layers)
-        2. Accessories
-        3. Additional considerations
-
-        For each item, provide:
-        - Specific type recommended
-        - Why it's suitable for the conditions
-        - Key features to look for
-        - URL of the item
-        - Any alternatives
-
-        Include the URL of the item in the 'url' field of the structured output.
-
-        Consider weather, activity level, and safety.
+        Create a complete outfit recommendation (Essential items, Accessories, Additional considerations). For each item, provide type, suitability, key features, URL, and alternatives. Consider weather, activity level, and safety.
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "theme": "string",
+          "items": [
+            {
+              "category": "string",
+              "name": "string",
+              "description": "string",
+              "why_recommended": "string",
+              "url": "string",
+              "details": {
+                "key_features": "string",
+                "alternatives": "string",
+                "weather_suitability": "string",
+                "activity_level": "string"
+              }
+            }
+          ],
+          "overall_tips": ["string"]
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -597,15 +686,27 @@
     <Prompt ref="EnsembleGenericPrompt">
       <promptString>
         Based on the user's request: "{request.query}"
+        Searched for: {ensemble.queries}
+        Search results: {ensemble.results}
 
-        I searched for: {ensemble.queries}
-
-        Here are the search results:
-        {ensemble.results}
-
-        Create a cohesive set of recommendations that work well together.
-        For each item, explain why it's recommended and how it complements the other items.
-        Include the URL of the item in the 'url' field of the structured output.
+        Create a cohesive set of recommendations that work well together. For each item, explain why it's recommended and how it complements others. Include the URL.
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "theme": "string",
+          "items": [
+            {
+              "category": "string",
+              "name": "string",
+              "description": "string",
+              "why_recommended": "string",
+              "url": "string",
+              "details": {}
+            }
+          ],
+          "overall_tips": ["string"]
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -628,19 +729,15 @@
     <Prompt ref="EnsembleItemRankingPrompt">
       <promptString>
         Given the user's query: "{request.query}"
+        And this item: Name: {item.name}, Type: {item.type}, Description: {item.description}
+        Rate its relevance for answering the query (0-100). Consider: Does it directly address what the user is looking for? Is it the right type of item (e.g., restaurant vs attraction)? Does it match any specific criteria mentioned in the query?
 
-        And this item:
-        Name: {item.name}
-        Type: {item.type}
-        Description: {item.description}
-
-        Rate how relevant this item is for answering the user's query on a scale of 0-100.
-        Consider:
-        - Does this item directly address what the user is looking for?
-        - Is it the right type of item (e.g., restaurant vs attraction)?
-        - Does it match any specific criteria mentioned in the query?
-
-        Provide your response as a JSON object with a 'score' field containing the relevance score.
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "score": "integer"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -653,17 +750,16 @@
   <Statistics>
     <Prompt ref="DetectItemTypePrompt">
       <promptString>
-        What is the kind of item the query is likely seeking with this query: {request.query}
-        
-        Common item types include:
-        - Recipe (for cooking, food preparation)
-        - Movie (for films, cinema)
-        - Product (for items to purchase)
-        - Restaurant (for dining establishments)
-        - Statistics (for demographic data, population statistics, economic indicators about places like counties, cities, states)
-        - Item (for general items that don't fit other categories)
-        
-        If the query is asking about statistical data like population, median income, demographics, or economic indicators for geographic locations, return "Statistics".
+        What is the kind of item the query is likely seeking: {request.query}
+        Common item types: Recipe, Movie, Product, Restaurant, Statistics, Item.
+        If asking about statistical data (population, income, demographics, economic indicators for geographic locations), return "Statistics".
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "item_type": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {
@@ -671,13 +767,20 @@
         }
       </returnStruc>
     </Prompt>
-    
+
     <Prompt ref="RankingPrompt">
       <promptString>
-        Assign a score between 0 and 100 to the following statistical data point
-        based on how relevant it is to the user's question about demographic or economic indicators.
-        The user's question is: "{request.query}". 
+        Assign a score (0-100) to the statistical data point for relevance to the user's question about demographic or economic indicators.
+        The user's question is: "{request.query}".
         The data point is: "{item.description}".
+
+        **RESPONSE FORMAT: ONLY output a single JSON object. DO NOT include any other text, explanations, or markdown outside the JSON block.**
+        ```json
+        {
+          "score": "integer",
+          "description": "string"
+        }
+        ```
       </promptString>
       <returnStruc>
         {

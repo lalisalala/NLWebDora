@@ -18,6 +18,7 @@ from misc.logger.logging_config_helper import get_configured_logger
 
 logger = get_configured_logger("config")
 
+
 @dataclass
 class SiteConfig:
     item_types: List[str]
@@ -174,6 +175,20 @@ class StorageBehaviorConfig:
     enable_search: bool = True
     auto_migrate_on_login: bool = True
     max_migrate_conversations: int = 500
+
+@dataclass
+class LLMProviderConfig:
+    llm_type: str
+    api_key: Optional[str] = None
+    models: Optional[ModelConfig] = None
+    endpoint: Optional[str] = None
+    api_version: Optional[str] = None
+
+    def get_endpoint(self) -> str:
+        if not self.endpoint:
+            raise ValueError("Endpoint not configured for this LLM provider.")
+        return self.endpoint
+
 
 class AppConfig:
     config_paths = ["config.yaml", "config_llm.yaml", "config_embedding.yaml", "config_retrieval.yaml", 

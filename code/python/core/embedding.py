@@ -14,6 +14,9 @@ import threading
 
 from core.config import CONFIG
 from misc.logger.logging_config_helper import get_configured_logger, LogLevel
+from sentence_transformers import SentenceTransformer
+
+_local_embedding_model = None
 
 logger = get_configured_logger("embedding_wrapper")
 
@@ -150,6 +153,14 @@ async def get_embedding(
             logger.debug(f"Elasticsearch embeddings received, count: {len(result)}")
             return result
         
+        if provider == "bge_local":
+            global _local_embedding_model
+            if _local_embedding_model is None:
+                _local_embedding_model = SentenceTransformer(model_id)
+            logger.debug("Generating local embedding using BGE-base")
+            return _local_embedding_model.encode([text])[0].tolist()
+
+
         error_msg = f"No embedding implementation for provider '{provider}'"
         logger.error(error_msg)
         raise ValueError(error_msg)
@@ -285,6 +296,15 @@ async def batch_get_embeddings(
             logger.debug(f"Elasticsearch batch embeddings received, count: {len(result)}")
             return result
         
+        
+        if provider == "bge_local":
+            global _local_embedding_model
+            if _local_embedding_model is None:
+                _local_embedding_model = SentenceTransformer(model_id)
+            logger.debug("Generating batch embeddings using BGE-base locally")
+            return _local_embedding_model.encode(texts, show_progress_bar=True).tolist()
+
+
         # Default implementation if provider doesn't match any above
         logger.debug(f"No specific batch implementation for {provider}, processing sequentially")
         results = []

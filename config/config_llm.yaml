@@ -1,6 +1,13 @@
-preferred_endpoint: azure_openai
+preferred_endpoint: ollama_local
 
 endpoints:
+  ollama_local:
+    llm_type: ollama
+    api_endpoint_env: http://localhost:11434
+    models:
+      high: mistral:instruct
+      low: mistral:instruct
+
   inception:
     api_key_env: INCEPTION_API_KEY
     api_endpoint_env: INCEPTION_ENDPOINT
@@ -66,10 +73,3 @@ endpoints:
     models:
       high: claude-3-5-sonnet
       low: llama3.1-8b
-
-  huggingface:
-    api_key_env: HF_TOKEN
-    llm_type: huggingface
-    models:
-      high: Qwen/Qwen2.5-72B-Instruct
-      low: Qwen/Qwen2.5-Coder-7B-Instruct
